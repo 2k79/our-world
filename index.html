@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our World of Memories</title>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      overflow: hidden;
+      background-color: #030712;
+      color: #f8fafc;
+    }
+
+    #globeViz {
+      width: 100vw;
+      height: 100vh;
+      cursor: grab;
+    }
+    #globeViz:active { cursor: grabbing; }
+
+    /* Welcome Card */
+    .welcome-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      background: rgba(3, 7, 18, 0.72);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    .welcome-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .welcome-card {
+      background: rgba(255, 255, 255, 0.96);
+      max-width: 440px;
+      width: 100%;
+      padding: 36px 28px;
+      border-radius: 24px;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+      animation: floatIn 0.7s ease;
+    }
+    @keyframes floatIn {
+      from { transform: translateY(20px) scale(0.96); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .welcome-card .tag {
+      display: inline-block;
+      background: #ffe4e6;
+      color: #e11d48;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+    .welcome-card h1 {
+      font-family: 'Caveat', cursive;
+      font-size: 42px;
+      margin: 0 0 12px;
+      color: #1e293b;
+      line-height: 1.1;
+    }
+    .welcome-card p {
+      font-size: 15px;
+      color: #475569;
+      line-height: 1.6;
+      margin: 0 0 24px;
+    }
+    .start-btn {
+      background: linear-gradient(135deg, #ff4d6d, #e11d48);
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(225, 29, 72, 0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .start-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(225, 29, 72, 0.55);
+    }
+
+    /* Top Floating Bar */
+    .top-bar {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 1200;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .stats-card, .top-controls {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+    .stats-card {
+      padding: 8px 16px;
+      border-radius: 16px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    .stat-item { text-align: center; }
+    .stat-num { display: block; font-size: 15px; font-weight: 700; color: #ff758f; }
+    .stat-divider { width: 1px; height: 24px; background: rgba(255, 255, 255, 0.15); }
+
+    .top-controls {
+      padding: 6px;
+      border-radius: 50px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .pill-btn {
+      border: none;
+      background: transparent;
+      color: #e2e8f0;
+      padding: 8px 14px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .pill-btn:hover { background: rgba(255, 255, 255, 0.12); }
+    .pill-btn.active {
+      background: #e11d48;
+      color: white;
+    }
+
+    /* 3D Globe Pins */
+    .globe-pin-wrapper {
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .pin-avatar-box {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      transition: transform 0.2s ease;
+    }
+    .globe-pin-wrapper:hover .pin-avatar-box {
+      transform: scale(1.22);
+      z-index: 999;
+    }
+    .photo-pin {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 18px rgba(255, 77, 109, 0.75), 0 6px 14px rgba(0,0,0,0.65);
+      background-size: cover;
+      background-position: center;
+      object-fit: cover;
+      display: block;
+      background-color: #1e293b;
+      transition: border-color 0.2s ease;
+    }
+    .globe-pin-wrapper:hover .photo-pin {
+      border-color: #ff4d6d;
+    }
+    .video-pin-badge {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      background: #e11d48;
+      color: white;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+    .pin-label {
+      margin-top: 6px;
+      background: rgba(15, 23, 42, 0.9);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: all 0.2s;
+      pointer-events: none;
+    }
+    .globe-pin-wrapper:hover .pin-label {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Future Destinations Gold Pins */
+    .future-pin {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fef08a, #f59e0b);
+      border: 2.5px dashed #ffffff;
+      box-shadow: 0 0 18px rgba(245, 158, 11, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      transition: transform 0.2s ease;
+    }
+    .globe-pin-wrapper:hover .future-pin {
+      transform: scale(1.25);
+    }
+
+    /* POLAROID WALL VIEW */
+    .polaroid-view {
+      position: fixed;
+      inset: 0;
+      z-index: 1100;
+      background: radial-gradient(circle at top, #1e1b2e 0%, #090d16 100%);
+      padding: 90px 24px 40px;
+      overflow-y: auto;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+    .polaroid-view.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .polaroid-header {
+      max-width: 1100px;
+      margin: 0 auto 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .polaroid-header h2 {
+      font-family: 'Caveat', cursive;
+      font-size: 36px;
+      margin: 0;
+      color: #fff;
+    }
+    .filter-group {
+      display: flex;
+      gap: 8px;
+    }
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: #e11d48;
+      border-color: #e11d48;
+      color: white;
+    }
+    .polaroid-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 28px;
+      padding-bottom: 40px;
+    }
+    .polaroid-card {
+      background: #fdfdfd;
+      padding: 12px 12px 18px;
+      border-radius: 4px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+      color: #1e293b;
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      position: relative;
+    }
+    .polaroid-card:hover {
+      transform: scale(1.06) rotate(0deg) !important;
+      box-shadow: 0 18px 36px rgba(225, 29, 72, 0.35);
+      z-index: 10;
+    }
+    .polaroid-card img,
+    .polaroid-card video {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: #e2e8f0;
+      display: block;
+      margin-bottom: 12px;
+    }
+    .polaroid-card h3 {
+      font-family: 'Caveat', cursive;
+      font-size: 24px;
+      margin: 0;
+      color: #0f172a;
+      line-height: 1.1;
+    }
+    .polaroid-card span {
+      display: block;
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+    .polaroid-fav-badge,
+    .polaroid-vid-badge {
+      position: absolute;
+      top: 18px;
+      background: rgba(255, 255, 255, 0.92);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 2;
+    }
+    .polaroid-fav-badge { right: 18px; }
+    .polaroid-vid-badge { left: 18px; }
+
+    /* FULLSCREEN INSTAGRAM-STYLE LIGHTBOX */
+    .lightbox-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2500;
+      background: rgba(6, 9, 19, 0.93);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+    .lightbox-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .lb-top-bar {
+      position: fixed;
+      top: 20px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 2520;
+    }
+    .lb-top-left { display: flex; gap: 10px; align-items: center; }
+    .lb-counter, .lb-autoplay-btn {
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.14);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 20px;
+    }
+    .lb-autoplay-btn { cursor: pointer; transition: background 0.2s; }
+    .lb-autoplay-btn:hover, .lb-autoplay-btn.playing { background: #e11d48; }
+    .lb-close {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: white;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lb-close:hover { background: rgba(255, 255, 255, 0.3); }
+
+    .lb-nav {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.18);
+      border: none;
+      color: white;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2510;
+    }
+    .lb-nav:hover { background: rgba(255, 255, 255, 0.35); }
+    .lb-prev { left: 20px; }
+    .lb-next { right: 20px; }
+
+    .lb-content {
+      max-width: 820px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .lb-image-wrapper {
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 14px;
+      user-select: none;
+    }
+    .lb-image-wrapper img,
+    .lb-image-wrapper video {
+      max-height: 62vh;
+      max-width: 90vw;
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+      object-fit: contain;
+      cursor: pointer;
+      background: #000;
+    }
+
+    .big-heart-burst {
+      position: absolute;
+      font-size: 85px;
+      pointer-events: none;
+      animation: popHeart 0.8s ease forwards;
+    }
+    @keyframes popHeart {
+      0% { transform: scale(0.2); opacity: 0; }
+      35% { transform: scale(1.25); opacity: 1; }
+      100% { transform: scale(1.1); opacity: 0; }
+    }
+    .floating-heart {
+      position: fixed;
+      font-size: 24px;
+      pointer-events: none;
+      z-index: 2600;
+      animation: floatUpHeart 1.6s ease-out forwards;
+    }
+    @keyframes floatUpHeart {
+      0% { transform: translateY(0) scale(0.8); opacity: 1; }
+      100% { transform: translateY(-160px) scale(1.4); opacity: 0; }
+    }
+
+    .lb-caption {
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 14px 22px;
+      border-radius: 18px;
+      max-width: 600px;
+      width: 92vw;
+      color: white;
+    }
+    .lb-caption-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+    .lb-caption h2 { margin: 0 0 2px; font-size: 19px; color: #fff; }
+    .lb-meta { display: block; font-size: 12px; color: #ff758f; font-weight: 600; }
+    .lb-like-btn {
+      background: rgba(255, 255, 255, 0.12);
+      border: none;
+      color: white;
+      font-size: 22px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .lb-caption p {
+      margin: 10px 0 0;
+      font-size: 14px;
+      color: #e2e8f0;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    /* Bottom Quick-Fly Bar */
+    .fly-bar {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1050;
+      display: flex;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 8px 14px;
+      border-radius: 50px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.45);
+      max-width: 92vw;
+      overflow-x: auto;
+    }
+    .fly-btn {
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: #f8fafc;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .fly-btn:hover { background: #ff4d6d; color: white; }
+    .fly-btn.tour-btn {
+      background: linear-gradient(135deg, #ff4d6d, #e11d48);
+      color: white;
+    }
+
+    @media (max-width: 650px) {
+      .lb-image-wrapper img,
+      .lb-image-wrapper video { max-height: 50vh; }
+      .lb-nav { width: 38px; height: 38px; font-size: 20px; }
+      .lb-prev { left: 8px; }
+      .lb-next { right: 8px; }
+      .polaroid-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Welcome Card -->
+  <div class="welcome-overlay" id="welcomeOverlay">
+    <div class="welcome-card">
+      <span class="tag">✨ HAPPY BIRTHDAY ✨</span>
+      <h1>Our story around the world</h1>
+      <p>
+        Every corner of the planet we visit becomes my favorite just because I'm with you.
+        Spin our world and let's relive our best moments together.
+      </p>
+      <button class="start-btn" id="startBtn">Explore our world 🌎</button>
+    </div>
+  </div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="stats-card">
+      <div class="stat-item">
+        <span class="stat-num" id="statDias">0</span>
+        <span>Days together</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num" id="statFotos">0</span>
+        <span>Memories</span>
+      </div>
+    </div>
+
+    <div class="top-controls">
+      <button class="pill-btn active" id="btnViewGlobe">🌎 3D Globe</button>
+      <button class="pill-btn" id="btnViewPolaroid">📸 Polaroid Wall</button>
+      <button class="pill-btn" id="btnDayNight">🌙 Night</button>
+      <button class="pill-btn" id="musicToggle">🔇 Music</button>
+    </div>
+  </div>
+
+  <!-- Background Audio -->
+  <audio id="bgMusic" loop>
+    <source src="musica.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- 3D Globe Container -->
+  <div id="globeViz"></div>
+
+  <!-- Polaroid Wall View -->
+  <div class="polaroid-view" id="polaroidView">
+    <div class="polaroid-header">
+      <h2>Our memories in Polaroid ✨</h2>
+      <div class="filter-group">
+        <button class="filter-btn active" id="filterAll">All</button>
+        <button class="filter-btn" id="filterFavs">❤️ Favorites</button>
+      </div>
+    </div>
+    <div class="polaroid-grid" id="polaroidGrid"></div>
+  </div>
+
+  <!-- Fullscreen Lightbox -->
+  <div class="lightbox-overlay" id="lightbox">
+    <div class="lb-top-bar">
+      <div class="lb-top-left">
+        <span class="lb-counter" id="lbCounter">1 / 1</span>
+        <button class="lb-autoplay-btn" id="lbAutoplayBtn">▶ Slideshow</button>
+      </div>
+      <button class="lb-close" id="lbClose" title="Close (Esc)">✕</button>
+    </div>
+
+    <button class="lb-nav lb-prev" id="lbPrev">‹</button>
+    <button class="lb-nav lb-next" id="lbNext">›</button>
+
+    <div class="lb-content">
+      <div class="lb-image-wrapper" id="lbImgWrapper">
+        <img id="lbImg" src="" alt="Memory" title="Double-click to love" />
+        <video id="lbVideo" controls muted loop playsinline style="display: none;"></video>
+      </div>
+      <div class="lb-caption">
+        <div class="lb-caption-header">
+          <div>
+            <h2 id="lbTitle">Title</h2>
+            <span class="lb-meta" id="lbMeta">Location • Date</span>
+          </div>
+          <button class="lb-like-btn" id="lbLikeBtn" title="Love it">🤍</button>
+        </div>
+        <p id="lbNote">Note</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Quick-Fly Bar -->
+  <div class="fly-bar" id="flyBar"></div>
+
+  <!-- Libraries: Globe.gl + Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl/dist/globe.gl.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script>
+    document.write('<script src="recuerdos.js?v=1"><\/script>');
+  </script>
+
+  <script>
+    // SET YOUR ANNIVERSARY DATE HERE (Year, Month - 1, Day)
+    const FECHA_INICIO = new Date(2024, 4, 15);
+    const CACHE_BUSTER = '1';
+
+    const hoy = new Date();
+    const diasJuntos = Math.max(1, Math.floor((hoy - FECHA_INICIO) / (1000 * 60 * 60 * 24)));
+    document.getElementById('statDias').textContent = diasJuntos;
+    document.getElementById('statFotos').textContent = recuerdos.length;
+
+    // Helper to detect short video files (.mp4, .mov, .webm, .m4v)
+    function esVideo(ruta) {
+      return typeof ruta === 'string' && /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(ruta);
+    }
+
+    function obtenerMedia(item) {
+      const ruta = item.video || item.foto || '';
+      return ruta ? `${ruta}?v=${CACHE_BUSTER}` : '';
+    }
+
+    // 1. INITIALIZE HD 3D GLOBE
+    const TILES_SATELITE_HD = (x, y, l) =>
+      `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${l}/${y}/${x}`;
+    const TEXTURA_NOCHE = 'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg';
+    let modoNoche = false;
+
+    const world = Globe()
+      (document.getElementById('globeViz'))
+      .globeTileEngineUrl(TILES_SATELITE_HD)
+      .bumpImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png')
+      .backgroundImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/night-sky.png')
+      .atmosphereColor('#60a5fa')
+      .atmosphereAltitude(0.18);
+
+    world.renderer().setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    world.pointOfView({ lat: 10, lng: -45, altitude: 2.3 });
+
+    // Smooth scroll-wheel zoom, 1:1 drag sensitivity & dynamic arc thickness
+    const controls = world.controls();
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.6;
+    controls.enableZoom = true;
+    controls.enablePan = false;
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.minDistance = 100.15;
+    controls.maxDistance = 450;
+
+    let ultimoGrosorArco = 0.7;
+
+    controls.addEventListener('change', () => {
+      const dist = world.camera().position.length();
+      const altitudActual = Math.max(0.0015, (dist - 100) / 100);
+
+      controls.zoomSpeed = Math.min(1.2, Math.max(0.02, altitudActual * 1.2));
+      controls.rotateSpeed = Math.min(0.8, Math.max(0.0003, altitudActual * 0.22));
+
+      const nuevoGrosor = Math.min(0.7, Math.max(0.0006, altitudActual * 0.28));
+      if (Math.abs(nuevoGrosor - ultimoGrosorArco) > ultimoGrosorArco * 0.12) {
+        ultimoGrosorArco = nuevoGrosor;
+        world.arcStroke(nuevoGrosor);
+      }
+    });
+
+    document.getElementById('globeViz').addEventListener('pointerdown', () => {
+      controls.autoRotate = false;
+    });
+
+    window.addEventListener('resize', () => {
+      world.width(window.innerWidth).height(window.innerHeight);
+    });
+
+    const btnDayNight = document.getElementById('btnDayNight');
+    btnDayNight.addEventListener('click', () => {
+      modoNoche = !modoNoche;
+      if (modoNoche) {
+        world.globeTileEngineUrl(null).globeImageUrl(TEXTURA_NOCHE);
+        btnDayNight.textContent = '☀️ Day HD';
+      } else {
+        world.globeImageUrl(null).globeTileEngineUrl(TILES_SATELITE_HD);
+        btnDayNight.textContent = '🌙 Night';
+      }
+    });
+
+    // 2. ANIMATED 3D FLIGHT ARCS
+    if (typeof rutasVuelo !== 'undefined') {
+      const arcos = rutasVuelo.map(r => ({
+        startLat: r.desde[0],
+        startLng: r.desde[1],
+        endLat: r.hasta[0],
+        endLng: r.hasta[1]
+      }));
+
+      world
+        .arcsData(arcos)
+        .arcColor(() => ['#ff4d6d', '#fbbf24'])
+        .arcDashLength(0.45)
+        .arcDashGap(0.25)
+        .arcDashAnimateTime(2200)
+        .arcStroke(ultimoGrosorArco);
+    }
+
+    // 3. 3D PINS (Photos, Videos & Future Destinations)
+    const puntosGlobo = recuerdos.map((item, idx) => ({
+      ...item,
+      tipo: 'recuerdo',
+      index: idx
+    }));
+
+    if (typeof proximosDestinos !== 'undefined') {
+      proximosDestinos.forEach(dest => {
+        puntosGlobo.push({
+          ...dest,
+          tipo: 'futuro'
+        });
+      });
+    }
+
+    world
+      .htmlElementsData(puntosGlobo)
+      .htmlElement(d => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'globe-pin-wrapper';
+
+        if (d.tipo === 'recuerdo') {
+          const media = obtenerMedia(d);
+          const videoFlag = esVideo(media);
+
+          if (videoFlag) {
+            const avatarHtml = d.miniatura
+              ? `<div class="photo-pin" style="background-image: url('${d.miniatura}?v=${CACHE_BUSTER}')"></div>`
+              : `<video class="photo-pin" src="${media}#t=0.1" muted playsinline preload="metadata"></video>`;
+
+            wrapper.innerHTML = `
+              <div class="pin-avatar-box">
+                ${avatarHtml}
+                <span class="video-pin-badge">▶</span>
+              </div>
+              <span class="pin-label">${d.titulo}</span>
+            `;
+          } else {
+            wrapper.innerHTML = `
+              <div class="pin-avatar-box">
+                <div class="photo-pin" style="background-image: url('${media}')"></div>
+              </div>
+              <span class="pin-label">${d.titulo}</span>
+            `;
+          }
+          wrapper.onclick = () => abrirRecuerdo(d.index);
+        } else {
+          wrapper.innerHTML = `
+            <div class="future-pin">🔒</div>
+            <span class="pin-label">${d.titulo}</span>
+          `;
+          wrapper.onclick = () => abrirDestinoFuturo(d);
+        }
+        return wrapper;
+      });
+
+    // 4. CONFETTI + WELCOME CARD + BACKGROUND MUSIC
+    const welcomeOverlay = document.getElementById('welcomeOverlay');
+    const startBtn = document.getElementById('startBtn');
+    const bgMusic = document.getElementById('bgMusic');
+    const musicToggle = document.getElementById('musicToggle');
+    let isPlaying = false;
+
+    function actualizarBotonMusica() {
+      musicToggle.textContent = isPlaying ? '🎵 Pause' : '🔇 Music';
+    }
+
+    function lanzarConfeti() {
+      confetti({
+        particleCount: 90,
+        spread: 75,
+        origin: { y: 0.6 },
+        colors: ['#ff4d6d', '#fbbf24', '#ffffff', '#f472b6']
+      });
+    }
+
+    startBtn.addEventListener('click', () => {
+      welcomeOverlay.classList.add('hidden');
+      lanzarConfeti();
+      bgMusic.volume = 0.45;
+      bgMusic.play().then(() => {
+        isPlaying = true;
+        actualizarBotonMusica();
+      }).catch(() => {});
+
+      if (recuerdos.length > 0) {
+        controls.autoRotate = false;
+        world.pointOfView({ lat: recuerdos[0].lat, lng: recuerdos[0].lng, altitude: 1.1 }, 1800);
+      }
+    });
+
+    musicToggle.addEventListener('click', () => {
+      if (isPlaying) { bgMusic.pause(); isPlaying = false; }
+      else { bgMusic.play(); isPlaying = true; }
+      actualizarBotonMusica();
+    });
+
+    // 5. FULLSCREEN LIGHTBOX + LIKES + AUTO SLIDESHOW
+    const lightbox = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lbImg');
+    const lbVideo = document.getElementById('lbVideo');
+    const lbImgWrapper = document.getElementById('lbImgWrapper');
+    const lbTitle = document.getElementById('lbTitle');
+    const lbMeta = document.getElementById('lbMeta');
+    const lbNote = document.getElementById('lbNote');
+    const lbCounter = document.getElementById('lbCounter');
+    const lbLikeBtn = document.getElementById('lbLikeBtn');
+    const lbAutoplayBtn = document.getElementById('lbAutoplayBtn');
+    const lbPrev = document.getElementById('lbPrev');
+    const lbNext = document.getElementById('lbNext');
+
+    let indiceActual = 0;
+    let intervaloTour = null;
+    let favoritos = JSON.parse(localStorage.getItem('recuerdosFavoritos') || '{}');
+
+    function actualizarCorazon() {
+      lbLikeBtn.textContent = favoritos[indiceActual] ? '❤️' : '🤍';
+    }
+
+    function lanzarCorazones() {
+      const burst = document.createElement('div');
+      burst.className = 'big-heart-burst';
+      burst.textContent = '❤️';
+      lbImgWrapper.appendChild(burst);
+      setTimeout(() => burst.remove(), 800);
+
+      for (let i = 0; i < 8; i++) {
+        const h = document.createElement('div');
+        h.className = 'floating-heart';
+        h.textContent = ['❤️', '💖', '💕'][i % 3];
+        h.style.left = (25 + Math.random() * 50) + 'vw';
+        h.style.bottom = (15 + Math.random() * 20) + 'vh';
+        h.style.animationDuration = (1.2 + Math.random() * 0.7) + 's';
+        document.body.appendChild(h);
+        setTimeout(() => h.remove(), 1800);
+      }
+    }
+
+    function darMeEncanta() {
+      favoritos[indiceActual] = true;
+      localStorage.setItem('recuerdosFavoritos', JSON.stringify(favoritos));
+      actualizarCorazon();
+      lanzarCorazones();
+      renderizarPolaroids();
+    }
+
+    lbLikeBtn.addEventListener('click', () => {
+      if (favoritos[indiceActual]) {
+        delete favoritos[indiceActual];
+        localStorage.setItem('recuerdosFavoritos', JSON.stringify(favoritos));
+        actualizarCorazon();
+        renderizarPolaroids();
+      } else {
+        darMeEncanta();
+      }
+    });
+
+    lbImg.addEventListener('dblclick', darMeEncanta);
+    lbVideo.addEventListener('dblclick', darMeEncanta);
+
+    function detenerTour() {
+      if (intervaloTour) {
+        clearInterval(intervaloTour);
+        intervaloTour = null;
+      }
+      lbAutoplayBtn.textContent = '▶ Slideshow';
+      lbAutoplayBtn.classList.remove('playing');
+    }
+
+    function iniciarTour() {
+      detenerTour();
+      if (!lightbox.classList.contains('active')) abrirRecuerdo(0);
+      lbAutoplayBtn.textContent = '⏸ Pause tour';
+      lbAutoplayBtn.classList.add('playing');
+      intervaloTour = setInterval(() => {
+        abrirRecuerdo(indiceActual + 1);
+      }, 4500);
+    }
+
+    lbAutoplayBtn.addEventListener('click', () => {
+      if (intervaloTour) detenerTour();
+      else iniciarTour();
+    });
+
+    function detenerVideoLightbox() {
+      lbVideo.pause();
+      lbVideo.removeAttribute('src');
+      lbVideo.load();
+      lbVideo.style.display = 'none';
+    }
+
+    function abrirRecuerdo(index) {
+      indiceActual = (index + recuerdos.length) % recuerdos.length;
+      const item = recuerdos[indiceActual];
+      const media = obtenerMedia(item);
+
+      lbLikeBtn.style.display = 'flex';
+      lbPrev.style.display = 'flex';
+      lbNext.style.display = 'flex';
+      lbAutoplayBtn.style.display = 'inline-block';
+
+      if (esVideo(media)) {
+        lbImg.style.display = 'none';
+        lbVideo.src = media;
+        lbVideo.style.display = 'block';
+        lbVideo.play().catch(() => {});
+      } else {
+        detenerVideoLightbox();
+        lbImg.src = media;
+        lbImg.style.display = 'block';
+      }
+
+      lbTitle.textContent = item.titulo;
+      lbMeta.textContent = item.fecha ? `${item.lugar} • ${item.fecha}` : item.lugar;
+      const lineasNota = item.nota.split('\n');
+      lbNote.innerHTML = lineasNota.length > 1
+        ? `${lineasNota[0]}<span style="display:block; margin-top:6px; color:#cbd5e1;">${lineasNota.slice(1).join('<br>')}</span>`
+        : item.nota;
+      lbCounter.textContent = `${indiceActual + 1} / ${recuerdos.length}`;
+      actualizarCorazon();
+
+      lightbox.classList.add('active');
+      controls.autoRotate = false;
+      world.pointOfView({ lat: item.lat, lng: item.lng, altitude: 0.7 }, 1200);
+    }
+
+    function abrirDestinoFuturo(dest) {
+      detenerTour();
+      detenerVideoLightbox();
+      lbImg.style.display = 'none';
+      lbLikeBtn.style.display = 'none';
+      lbPrev.style.display = 'none';
+      lbNext.style.display = 'none';
+      lbAutoplayBtn.style.display = 'none';
+
+      lbTitle.textContent = `🔒 ${dest.titulo}`;
+      lbMeta.textContent = `📍 ${dest.lugar}`;
+      lbNote.textContent = dest.nota;
+      lbCounter.textContent = 'Next destination';
+
+      lightbox.classList.add('active');
+      controls.autoRotate = false;
+      world.pointOfView({ lat: dest.lat, lng: dest.lng, altitude: 0.8 }, 1200);
+    }
+
+    function cerrarVisor() {
+      detenerTour();
+      detenerVideoLightbox();
+      lightbox.classList.remove('active');
+    }
+
+    document.getElementById('lbClose').addEventListener('click', cerrarVisor);
+    lbPrev.addEventListener('click', (e) => { e.stopPropagation(); detenerTour(); abrirRecuerdo(indiceActual - 1); });
+    lbNext.addEventListener('click', (e) => { e.stopPropagation(); detenerTour(); abrirRecuerdo(indiceActual + 1); });
+
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox || e.target === lbImgWrapper) cerrarVisor();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!lightbox.classList.contains('active')) return;
+      if (e.key === 'Escape') cerrarVisor();
+      if (e.key === 'ArrowLeft') { detenerTour(); abrirRecuerdo(indiceActual - 1); }
+      if (e.key === 'ArrowRight') { detenerTour(); abrirRecuerdo(indiceActual + 1); }
+    });
+
+    // 6. POLAROID WALL & VIEW TOGGLE
+    const btnViewGlobe = document.getElementById('btnViewGlobe');
+    const btnViewPolaroid = document.getElementById('btnViewPolaroid');
+    const polaroidView = document.getElementById('polaroidView');
+    const polaroidGrid = document.getElementById('polaroidGrid');
+    const filterAll = document.getElementById('filterAll');
+    const filterFavs = document.getElementById('filterFavs');
+    const flyBar = document.getElementById('flyBar');
+    let soloFavoritas = false;
+
+    function renderizarPolaroids() {
+      polaroidGrid.innerHTML = '';
+      recuerdos.forEach((item, index) => {
+        if (soloFavoritas && !favoritos[index]) return;
+
+        const media = obtenerMedia(item);
+        const videoFlag = esVideo(media);
+        const card = document.createElement('div');
+        card.className = 'polaroid-card';
+        const rotacion = ((index % 5) - 2) * 1.4;
+        card.style.transform = `rotate(${rotacion}deg)`;
+
+        const mediaHtml = videoFlag
+          ? `<video src="${media}#t=0.1" muted loop playsinline preload="metadata" onmouseover="this.play()" onmouseout="this.pause()"></video>`
+          : `<img src="${media}" alt="${item.titulo}" loading="lazy" />`;
+
+        card.innerHTML = `
+          ${videoFlag ? '<div class="polaroid-vid-badge">🎬</div>' : ''}
+          ${favoritos[index] ? '<div class="polaroid-fav-badge">❤️</div>' : ''}
+          ${mediaHtml}
+          <h3>${item.titulo}</h3>
+          <span>${item.lugar}${item.fecha ? ' • ' + item.fecha : ''}</span>
+        `;
+        card.onclick = () => abrirRecuerdo(index);
+        polaroidGrid.appendChild(card);
+      });
+    }
+
+    renderizarPolaroids();
+
+    btnViewGlobe.addEventListener('click', () => {
+      btnViewGlobe.classList.add('active');
+      btnViewPolaroid.classList.remove('active');
+      polaroidView.classList.remove('active');
+      flyBar.style.display = 'flex';
+    });
+
+    btnViewPolaroid.addEventListener('click', () => {
+      btnViewPolaroid.classList.add('active');
+      btnViewGlobe.classList.remove('active');
+      polaroidView.classList.add('active');
+      flyBar.style.display = 'none';
+      renderizarPolaroids();
+    });
+
+    filterAll.addEventListener('click', () => {
+      soloFavoritas = false;
+      filterAll.classList.add('active');
+      filterFavs.classList.remove('active');
+      renderizarPolaroids();
+    });
+
+    filterFavs.addEventListener('click', () => {
+      soloFavoritas = true;
+      filterFavs.classList.add('active');
+      filterAll.classList.remove('active');
+      renderizarPolaroids();
+    });
+
+    // 7. BOTTOM QUICK-FLY BAR
+    if (typeof destinosRapidos !== 'undefined') {
+      destinosRapidos.forEach(dest => {
+        const btn = document.createElement('button');
+        btn.className = 'fly-btn';
+        btn.textContent = dest.nombre;
+        btn.onclick = () => {
+          controls.autoRotate = false;
+          const altitud = dest.zoom <= 3 ? 2.3 : dest.zoom <= 7 ? 0.75 : 0.4;
+          world.pointOfView({ lat: dest.lat, lng: dest.lng, altitude: altitud }, 1600);
+        };
+        flyBar.appendChild(btn);
+      });
+    }
+
+    const tourBtn = document.createElement('button');
+    tourBtn.className = 'fly-btn tour-btn';
+    tourBtn.textContent = '▶ Slideshow';
+    tourBtn.onclick = iniciarTour;
+    flyBar.appendChild(tourBtn);
+  </script>
+</body>
+</html>
